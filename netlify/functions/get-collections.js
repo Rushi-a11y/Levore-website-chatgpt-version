@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-// ✅ Define your exact allowed frontend domain here
+// ✅ Define your exact allowed frontend  domain here
 const CORS_ORIGIN = 'https://sparkly-genie-88594b.netlify.app';
 
 export default async function handler(req, res) {
