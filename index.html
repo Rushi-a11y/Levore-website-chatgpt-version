@@ -106,6 +106,27 @@ button:disabled {
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 
+  <script>
+    // MOBILE FIX: Start timeout immediately (regular script - doesn't wait for Babel)
+    console.log('🚀 Immediate script executing...');
+    
+    window.hideInitialLoader = function() {
+      const loader = document.getElementById('initial-loader');
+      if (loader) {
+        loader.style.display = 'none';
+        console.log('✅ Initial loader hidden');
+      }
+    };
+    
+    // Hide loader after 20 seconds maximum, regardless of React status
+    setTimeout(function() {
+      console.log('⏰ 20-second timeout reached - forcing loader hide');
+      console.log('React loaded?', typeof React !== 'undefined');
+      console.log('ReactDOM loaded?', typeof ReactDOM !== 'undefined');
+      window.hideInitialLoader();
+    }, 20000);
+  </script>
+
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
 
@@ -3300,15 +3321,11 @@ function CheckoutDrawer({open, onClose, onBack, cart, products, total, onWhatsAp
 }
 
 
-    // MOBILE FIX: Hide initial loader once React successfully mounts
-    const hideInitialLoader = () => {
-      const loader = document.getElementById('initial-loader');
-      if (loader) loader.style.display = 'none';
-    };
-    
+    // MOBILE FIX: Use the hideInitialLoader from window (defined in regular script above)
         // Check if React is loaded
     if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
       console.error('React or ReactDOM not loaded');
+      window.hideInitialLoader();
       document.getElementById('root').innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; font-family: system-ui, sans-serif; padding: 20px; text-align: center;">
           <h1 style="font-size: 24px; margin-bottom: 8px;">Scripts failed to load</h1>
@@ -3319,10 +3336,11 @@ function CheckoutDrawer({open, onClose, onBack, cart, products, total, onWhatsAp
     } else {
       try {
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-        hideInitialLoader();
+        window.hideInitialLoader();
         console.log('App initialized successfully');
       } catch (error) {
         console.error('Failed to initialize app:', error);
+        window.hideInitialLoader();
         document.getElementById('root').innerHTML = `
           <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; font-family: system-ui, sans-serif; padding: 20px; text-align: center;">
             <h1 style="font-size: 24px; margin-bottom: 8px;">Unable to load website</h1>
