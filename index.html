@@ -9,41 +9,14 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+<script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Supabase Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script>
     // Supabase Configuration - Replace with your actual credentials
     window.SUPABASE_URL = 'https://nmrvywjsscbepicifkci.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcnZ5d2pzc2NiZXBpY2lma2NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3OTMzNjYsImV4cCI6MjA3NzM2OTM2Nn0.ur1-JhtKEp2N9yPOCGtXhUMdnPpSY_BP2FTN0wJnPYQ';
   </script>
-
-  <!-- Focused interceptor: routes only Supabase 'collections' requests to Netlify proxy -->
-  <script>
-  (function(){
-    const SUPA_REST_BASE = 'https://nmrvywjsscbepicifkci.supabase.co'; // your Supabase base
-    const proxy = '/.netlify/functions/get-collections';
-    const origFetch = window.fetch;
-
-    window.fetch = function(input, init){
-      try {
-        const url = (typeof input === 'string') ? input : (input && input.url) || '';
-        // only intercept requests to your Supabase project and which target 'collections'
-        if (url.startsWith(SUPA_REST_BASE) && url.includes('/collections')) {
-          console.log('🔁 Redirecting Supabase collections request →', proxy, ' (original: ', url, ')');
-          // Return the proxy response (GET); keep same shape as Supabase rows
-          return origFetch(proxy, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-        }
-      } catch (e) {
-        console.warn('Interceptor error', e);
-      }
-      return origFetch(input, init);
-    };
-  })();
-  </script>
-
   <style>
     /* MOBILE FIX: Initial loader visible before React loads */
     #initial-loader {
@@ -1131,32 +1104,35 @@ button:disabled {
   },
 ];
 */
-function App(){
-  // Load collections and products from Supabase
-  const { collections: COLLECTIONS, loading: collectionsLoading, error: collectionsError } = useSupabaseCollections();
 
-  // Ensure a safe, local collections array so the UI never crashes
-  const collections = COLLECTIONS || [];
+    function buildNarrative(p){
+      const base = p.story || p.blurb || "Crafted in small batches with clean ingredients.";
+      return `${base} Tempered to a crisp snap and wrapped fresh.`;
+    }
 
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
-  const [route, setRoute] = useState({page:"home", param:null});
-  const navigate = useHashNavigation(route, setRoute);
-  const [search, setSearch] = useState("");
-  const [cart, setCart] = useState([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [cartFromCheckout, setCartFromCheckout] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collectionsDropdown, setCollectionsDropdown] = useState(false);
-  const [waNumber] = useState("919103109407");
-  const [customer, setCustomer] = useState({ name:"", email:"", phone:"", address:"" });
+    function App(){
+      // Load collections and products from Supabase
+      const { collections: COLLECTIONS, loading: collectionsLoading, error: collectionsError } = useSupabaseCollections();
+      
+      // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+      const [route, setRoute] = useState({page:"home", param:null});
+      const navigate = useHashNavigation(route, setRoute);
+      const [search, setSearch] = useState("");
+      const [cart, setCart] = useState([]);
+      const [cartOpen, setCartOpen] = useState(false);
+      const [checkoutOpen, setCheckoutOpen] = useState(false);
+      const [cartFromCheckout, setCartFromCheckout] = useState(false);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [collectionsDropdown, setCollectionsDropdown] = useState(false);
+      const [waNumber] = useState("919103109407");
+      const [customer, setCustomer] = useState({ name:"", email:"", phone:"", address:"" });
 
-  const ALL_PRODUCTS = useMemo(()=>(
-    (collections || []).flatMap(c => (c.products || []).map(p => ({...p, collection:c.key, collectionName:c.name})))
-  ), [collections]);
+      const ALL_PRODUCTS = useMemo(()=>(
+        (COLLECTIONS || []).flatMap(c => c.products.map(p => ({...p, collection:c.key, collectionName:c.name})))
+      ), [COLLECTIONS]);
 
-  const cartCount = useMemo(()=> cart.reduce((a,c)=>a+c.qty,0), [cart]);
-  const cartTotal = useMemo(()=> cart.reduce((s,l)=>{ const p=ALL_PRODUCTS.find(x=>x.sku===l.sku); return s + (p?p.price*l.qty:0); },0), [cart, ALL_PRODUCTS]);
+      const cartCount = useMemo(()=> cart.reduce((a,c)=>a+c.qty,0), [cart]);
+      const cartTotal = useMemo(()=> cart.reduce((s,l)=>{ const p=ALL_PRODUCTS.find(x=>x.sku===l.sku); return s + (p?p.price*l.qty:0); },0), [cart, ALL_PRODUCTS]);
 
       const filtered = useMemo(()=>{
         const q = (search||"").toLowerCase().trim();

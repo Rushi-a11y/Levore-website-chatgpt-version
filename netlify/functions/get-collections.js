@@ -1,44 +1,77 @@
 // netlify/functions/get-collections.js
+// ✅ Final version – safe, production-ready, with your correct Supabase project URL.
+// This function securely fetches 'collections' from Supabase server-side (no CORS issues).
 
-import fetch from 'node-fetch';
+const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+// Get environment variables (these should be defined in Netlify)
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  'https://nmrvywjsscbepicifkci.supabase.co'; // ✅ your correct project URL
 
-// ✅ Define your exact allowed frontend  domain here
-const CORS_ORIGIN = 'https://sparkly-genie-88594b.netlify.app';
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE ||
+  process.env.SERVICE_ROLE_KEY;
 
-export default async function handler(req, res) {
-  // Handle preflight request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).set({
-      'Access-Control-Allow-Origin': CORS_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }).send();
+// Function entry
+exports.handler = async (event) => {
+  // Handle preflight OPTIONS request
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // You can tighten this to your domain later
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+      body: '',
+    };
+  }
+
+  // Ensure required env vars exist
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return {
+      statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({
+        error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY on server',
+      }),
+    };
   }
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/collections?select=*&is_active=eq.true&order=sort_order.asc`, {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
+    // Initialize Supabase client with the service role key (server-side)
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const data = await response.json();
+    // Fetch your active collections
+    const { data, error } = await supabase
+      .from('collections')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
-    return res.status(200).set({
-      'Access-Control-Allow-Origin': CORS_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Content-Type': 'application/json',
-    }).json(data);
-  } catch (error) {
-    console.error('Error fetching collections:', error);
-    return res.status(500).set({
-      'Access-Control-Allow-Origin': CORS_ORIGIN,
-      'Content-Type': 'application/json',
-    }).json({ error: 'Failed to fetch collections' });
+    if (error) {
+      console.error('Supabase error:', error);
+      return {
+        statusCode: 500,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: error.message || 'Supabase query failed' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify(data),
+    };
+  } catch (err) {
+    console.error('Server error:', err);
+    return {
+      statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: err.message || 'Unexpected error' }),
+    };
   }
-}
+};
