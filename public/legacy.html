@@ -3165,5 +3165,32 @@ function CheckoutDrawer({open, onClose, onBack, cart, products, total, onWhatsAp
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+<script>
+(function(){
+  const origFetch = window.fetch;
+  window.fetch = async function(...args){
+    try {
+      const res = await origFetch.apply(this, args);
+      return res;
+    } catch (err) {
+      const msg = document.createElement('div');
+      msg.style.position = 'fixed';
+      msg.style.bottom = '0';
+      msg.style.left = '0';
+      msg.style.right = '0';
+      msg.style.background = '#fee';
+      msg.style.borderTop = '2px solid #e33';
+      msg.style.fontSize = '12px';
+      msg.style.padding = '8px';
+      msg.style.zIndex = '999999';
+      msg.style.color = '#000';
+      msg.textContent = `⚠️ Fetch failed: ${args[0]} | Error: ${err.message}`;
+      document.body.appendChild(msg);
+      throw err;
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
