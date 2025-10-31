@@ -1131,35 +1131,32 @@ button:disabled {
   },
 ];
 */
+function App(){
+  // Load collections and products from Supabase
+  const { collections: COLLECTIONS, loading: collectionsLoading, error: collectionsError } = useSupabaseCollections();
 
-    function buildNarrative(p){
-      const base = p.story || p.blurb || "Crafted in small batches with clean ingredients.";
-      return `${base} Tempered to a crisp snap and wrapped fresh.`;
-    }
+  // Ensure a safe, local collections array so the UI never crashes
+  const collections = COLLECTIONS || [];
 
-    function App(){
-      // Load collections and products from Supabase
-      const { collections: COLLECTIONS, loading: collectionsLoading, error: collectionsError } = useSupabaseCollections();
-      
-      // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
-      const [route, setRoute] = useState({page:"home", param:null});
-      const navigate = useHashNavigation(route, setRoute);
-      const [search, setSearch] = useState("");
-      const [cart, setCart] = useState([]);
-      const [cartOpen, setCartOpen] = useState(false);
-      const [checkoutOpen, setCheckoutOpen] = useState(false);
-      const [cartFromCheckout, setCartFromCheckout] = useState(false);
-      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-      const [collectionsDropdown, setCollectionsDropdown] = useState(false);
-      const [waNumber] = useState("919103109407");
-      const [customer, setCustomer] = useState({ name:"", email:"", phone:"", address:"" });
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const [route, setRoute] = useState({page:"home", param:null});
+  const navigate = useHashNavigation(route, setRoute);
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [cartFromCheckout, setCartFromCheckout] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collectionsDropdown, setCollectionsDropdown] = useState(false);
+  const [waNumber] = useState("919103109407");
+  const [customer, setCustomer] = useState({ name:"", email:"", phone:"", address:"" });
 
-      const ALL_PRODUCTS = useMemo(()=>(
-        (COLLECTIONS || []).flatMap(c => c.products.map(p => ({...p, collection:c.key, collectionName:c.name})))
-      ), [COLLECTIONS]);
+  const ALL_PRODUCTS = useMemo(()=>(
+    (collections || []).flatMap(c => (c.products || []).map(p => ({...p, collection:c.key, collectionName:c.name})))
+  ), [collections]);
 
-      const cartCount = useMemo(()=> cart.reduce((a,c)=>a+c.qty,0), [cart]);
-      const cartTotal = useMemo(()=> cart.reduce((s,l)=>{ const p=ALL_PRODUCTS.find(x=>x.sku===l.sku); return s + (p?p.price*l.qty:0); },0), [cart, ALL_PRODUCTS]);
+  const cartCount = useMemo(()=> cart.reduce((a,c)=>a+c.qty,0), [cart]);
+  const cartTotal = useMemo(()=> cart.reduce((s,l)=>{ const p=ALL_PRODUCTS.find(x=>x.sku===l.sku); return s + (p?p.price*l.qty:0); },0), [cart, ALL_PRODUCTS]);
 
       const filtered = useMemo(()=>{
         const q = (search||"").toLowerCase().trim();
